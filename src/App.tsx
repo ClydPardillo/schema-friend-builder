@@ -41,6 +41,8 @@ import CampaignManagement from "./pages/admin/CampaignManagement";
 import ScorecardManagement from "./pages/admin/ScorecardManagement";
 import PlatformSettings from "./pages/admin/PlatformSettings";
 import AuditLogs from "./pages/admin/AuditLogs";
+import MilestoneVerification from "./pages/admin/MilestoneVerification";
+import PaymentMethods from "./pages/PaymentMethods";
 
 const queryClient = new QueryClient();
 
@@ -71,13 +73,14 @@ const App = () => (
           <Route path="/charity/campaigns/edit/:campaignId" element={<CampaignForm />} />
           <Route path="/charity/campaigns/:campaignId/milestones" element={<ManageMilestones />} />
           <Route path="/charity/campaigns/:campaignId/milestones/:milestoneId/submit" element={<SubmitProofForm />} />
-          <Route path="/charity/campaigns/:campaignId/update" element={<PostImpactUpdate />} />
+          <Route path="/charity/campaigns/:campaignId/updates" element={<PostImpactUpdate />} />
           <Route path="/charity/verifications" element={<VerificationStatus />} />
           <Route path="/charity/funds" element={<FundsManagement />} />
           <Route path="/charity/profile" element={<OrganizationProfile />} />
           <Route path="/charity/settings" element={<CharitySettings />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/milestone-verification" element={<MilestoneVerification />} />
           <Route path="/admin/verifications" element={<VerificationQueue />} />
           <Route path="/admin/verifications/:submissionId" element={<VerificationDetail />} />
           <Route path="/admin/payouts" element={<FundReleaseManagement />} />
