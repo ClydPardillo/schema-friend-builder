@@ -34,3 +34,8 @@ def login(user: UserLogin, session: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"user_id": db_user.id, "user_type": db_user.user_type})
     return {"access_token": token, "token_type": "bearer"}
+
+@router.get("/me", response_model=UserOut)
+def get_me():
+    # Placeholder for demonstration—see real auth in a full app.
+    return {"id": "me", "email": "me@example.com", "user_type": "donor", "is_active": True}

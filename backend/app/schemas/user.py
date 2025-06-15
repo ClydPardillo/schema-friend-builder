@@ -3,9 +3,9 @@ from pydantic import BaseModel, EmailStr
 from enum import Enum
 
 class UserType(str, Enum):
-    donor = 'donor'
-    charity = 'charity'
-    admin = 'admin'
+    donor = "donor"
+    charity = "charity"
+    admin = "admin"
 
 class UserCreate(BaseModel):
     email: EmailStr

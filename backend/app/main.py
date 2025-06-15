@@ -2,9 +2,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import user, campaign, donation
+from app.routes import user
 
-app = FastAPI(title="ClearCause API", version="1.0.0")
+app = FastAPI(
+    title="MyCause API",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
 
@@ -17,9 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(user.router, prefix="/users", tags=["users"])
-app.include_router(campaign.router, prefix="/campaigns", tags=["campaigns"])
-app.include_router(donation.router, prefix="/donations", tags=["donations"])
 
 @app.get("/")
-def root():
-    return {"message": "ClearCause API running!"}
+def read_root():
+    return {"message": "Backend up!"}
