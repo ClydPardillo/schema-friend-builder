@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Upload } from 'lucide-react';
@@ -8,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const CharityApplicationForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +18,7 @@ const CharityApplicationForm: React.FC = () => {
     birCertificate: null,
     otherDoc: null
   });
+  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, docType: keyof typeof documents) => {
     if (e.target.files && e.target.files[0]) {
@@ -27,16 +29,36 @@ const CharityApplicationForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      // Navigate to success page or show success message
-      alert('Application submitted successfully! Our team will review your application and get back to you.');
+
+    try {
+      // For demo: Just use a JSON body for relevant metadata (real implementation should handle file upload)
+      const res = await fetch('/charities', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          // In a full implementation, collect actual input values; this is a demo skeleton
+          organization_name: (document.getElementById('org-name') as HTMLInputElement)?.value,
+          registration_number: (document.getElementById('reg-number') as HTMLInputElement)?.value,
+          organization_type: (document.getElementById('org-type') as HTMLSelectElement)?.value,
+          description: (document.getElementById('mission') as HTMLInputElement)?.value,
+          // etc...
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast({ title: "Application Submitted!", description: "Our team will review your application soon." });
+        navigate('/'); // Go to homepage or confirmation
+      } else {
+        toast({ title: "Submission Failed", description: data.message || "Something went wrong.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Network or server error", variant: "destructive" });
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   return (

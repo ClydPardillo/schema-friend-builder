@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CreditCard, Smartphone, Building2, Shield } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface PaymentMethodsProps {
   amount: number;
@@ -21,6 +22,8 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ amount, onPaymentSelect
     cvc: '',
     name: ''
   });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
 
   const paymentMethods = [
     {
@@ -65,9 +68,11 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ amount, onPaymentSelect
     setSelectedMethod(methodId);
   };
 
-  const handleProceedPayment = () => {
+  const handleProceedPayment = async () => {
     const method = paymentMethods.find(m => m.id === selectedMethod);
     if (!method) return;
+
+    setIsProcessing(true);
 
     const paymentData = {
       method: selectedMethod,
@@ -75,7 +80,35 @@ const PaymentMethods: React.FC<PaymentMethodsProps> = ({ amount, onPaymentSelect
       ...(selectedMethod === 'card' ? { cardDetails } : {})
     };
 
-    onPaymentSelect(selectedMethod, paymentData);
+    try {
+      const res = await fetch('/donations/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          payment_method: selectedMethod,
+          amount,
+          // Include credit card fields if present
+          ...((selectedMethod === 'card') && {
+            card_number: cardDetails.number,
+            expiry: cardDetails.expiry,
+            cvc: cardDetails.cvc,
+            cardholder_name: cardDetails.name
+          })
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast({ title: "Thank you!", description: "Your donation has been processed." });
+        onPaymentSelect(selectedMethod, paymentData);
+        navigate('/donate/success');
+      } else {
+        toast({ title: "Payment Failed", description: data.message || "Could not process payment.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Network or server error", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const calculateFee = (methodId: string) => {

@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { toast } from '@/hooks/use-toast';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,23 +14,35 @@ const Login: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // This is just a placeholder for the actual authentication logic
-      if (email === 'user@example.com' && password === 'password') {
-        // Successful login
-        window.location.href = '/';
+    try {
+      const res = await fetch('/users/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.success && data.data && data.data.access_token) {
+        toast({ title: "Signed in!", description: "You are now logged in." });
+        // Store token as needed (e.g. localStorage or context)
+        localStorage.setItem('access_token', data.data.access_token);
+        navigate('/');
       } else {
-        setError('Invalid email or password. Please try again.');
+        setError(data.message || 'Invalid credentials');
+        toast({ title: "Login Failed", description: data.message || "Invalid credentials", variant: "destructive" });
         setIsLoading(false);
       }
-    }, 1000);
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      toast({ title: "Error", description: "Network or server error", variant: "destructive" });
+      setIsLoading(false);
+    }
   };
 
   return (

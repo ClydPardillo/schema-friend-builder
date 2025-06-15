@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { toast } from '@/hooks/use-toast';
 
 const Signup: React.FC = () => {
   const [accountType, setAccountType] = useState<'donor' | 'charity'>('donor');
@@ -18,22 +19,20 @@ const Signup: React.FC = () => {
   const [newsletterOpt, setNewsletterOpt] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Basic validation
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
     if (password.length < 8) {
       setError('Password must be at least 8 characters long');
       return;
     }
-
     if (!agreeTerms) {
       setError('You must agree to the Terms of Service and Privacy Policy');
       return;
@@ -41,12 +40,33 @@ const Signup: React.FC = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // Just for demo purposes
-      window.location.href = '/';
+    try {
+      const res = await fetch('/users/signup', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          email,
+          password,
+          user_type: accountType,
+          first_name: firstName,
+          last_name: lastName,
+          phone: undefined
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Account Created", description: data.message || "" });
+        navigate('/login');
+      } else {
+        setError(data.message || 'Signup failed');
+        toast({ title: "Signup Failed", description: data.message || "Error", variant: "destructive" });
+        setIsLoading(false);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      toast({ title: "Network Error", description: "Please check your connection.", variant: "destructive" });
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
