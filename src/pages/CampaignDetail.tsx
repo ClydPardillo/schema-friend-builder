@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Droplet, Home, Users } from 'lucide-react';
@@ -9,6 +8,7 @@ import CampaignHeader from '@/components/ui/campaign/CampaignHeader';
 import DonationCard from '@/components/ui/campaign/DonationCard';
 import TabNavigation from '@/components/ui/campaign/TabNavigation';
 import TabContent from '@/components/ui/campaign/TabContent';
+import FavoriteButton from '@/components/ui/campaign/FavoriteButton';
 
 const SAMPLE_CAMPAIGN = {
   id: "1",
@@ -145,7 +145,10 @@ const CampaignDetail: React.FC = () => {
                 charity={SAMPLE_CAMPAIGN.charity}
                 daysLeft={SAMPLE_CAMPAIGN.daysLeft}
               />
-
+              {/* Add Favorite Button */}
+              <div className="flex justify-end pr-4 pb-2">
+                <FavoriteButton campaignId={SAMPLE_CAMPAIGN.id} />
+              </div>
               {/* Tab Navigation and Content */}
               <div className="bg-white rounded-xl shadow-md">
                 <TabNavigation 

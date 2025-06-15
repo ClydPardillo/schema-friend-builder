@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -85,7 +84,7 @@ const Login: React.FC = () => {
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     Password
                   </label>
-                  <Link to="/password-reset" className="text-sm text-clearcause-primary hover:text-clearcause-secondary">
+                  <Link to="/forgot-password" className="text-sm text-clearcause-primary hover:text-clearcause-secondary">
                     Forgot your password?
                   </Link>
                 </div>
@@ -153,7 +152,7 @@ const Login: React.FC = () => {
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <a
-                  href="#"
+                  href="/oauth/google" // For real case, this would be backend OAuth route
                   className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <span className="sr-only">Sign in with Google</span>
@@ -166,7 +165,7 @@ const Login: React.FC = () => {
                 </a>
 
                 <a
-                  href="#"
+                  href="/oauth/facebook" // For real case, backend OAuth
                   className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <span className="sr-only">Sign in with Facebook</span>

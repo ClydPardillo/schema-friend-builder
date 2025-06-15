@@ -1,5 +1,4 @@
-
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserOut, UserLogin
@@ -8,7 +7,9 @@ from app.models.user import User
 from app.auth.password import hash_password, verify_password
 from app.auth.jwt import create_access_token, SECRET_KEY, ALGORITHM
 from jose import jwt, JWTError
-from typing import Any
+from typing import Any, Optional
+import uuid
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -97,3 +98,30 @@ def get_me(current_user: User = Depends(get_current_user)):
         }
     }
 
+@router.post("/forgot-password")
+def forgot_password(email: str = Body(..., embed=True), session: Session = Depends(get_db)):
+    user = session.query(User).filter_by(email=email).first()
+    if not user:
+        return {"success": True, "message": "If your email exists, you will get a reset link."}
+    token = str(uuid.uuid4())
+    user.password_reset_token = token
+    user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
+    session.commit()
+    # In production, send email. Here, return token for demonstration:
+    return {
+        "success": True,
+        "message": "Password reset link sent.",
+        "data": { "reset_token": token }  # REMOVE IN PRODUCTION!
+    }
+
+@router.post("/reset-password")
+def reset_password(token: str = Body(...), new_password: str = Body(...), session: Session = Depends(get_db)):
+    user = session.query(User).filter_by(password_reset_token=token).first()
+    if not user or not user.password_reset_expires or user.password_reset_expires < datetime.utcnow():
+        return {"success": False, "message": "Invalid or expired token."}
+    from app.auth.password import hash_password
+    user.password_hash = hash_password(new_password)
+    user.password_reset_token = None
+    user.password_reset_expires = None
+    session.commit()
+    return {"success": True, "message": "Password reset successful."}
