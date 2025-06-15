@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -6,6 +5,7 @@ from app.routes import user
 from app.routes.donor import router as donor_router
 from app.routes.favorite import router as favorite_router
 from app.routes.campaign import router as campaign_router
+from app.routes.oauth import router as oauth_router
 
 app = FastAPI(
     title="MyCause API",
@@ -28,6 +28,7 @@ app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(donor_router, prefix="/donors", tags=["donors"])
 app.include_router(favorite_router, tags=["favorites"])
 app.include_router(campaign_router, prefix="/campaigns", tags=["campaigns"])
+app.include_router(oauth_router, prefix="", tags=["oauth"])
 
 @app.get("/")
 def read_root():

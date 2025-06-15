@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks, Body
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserOut, UserLogin
@@ -38,6 +38,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Dep
     user = session.query(User).filter_by(id=user_id).first()
     if user is None:
         raise credentials_exception
+    return user
+
+def get_current_admin(token: str = Depends(oauth2_scheme), session: Session = Depends(get_db)) -> User:
+    user = get_current_user(token, session)
+    if user.user_type.value != "admin":
+        raise HTTPException(status_code=403, detail="Admin privilege required")
     return user
 
 @router.post("/signup")
@@ -102,17 +108,43 @@ def get_me(current_user: User = Depends(get_current_user)):
 def forgot_password(email: str = Body(..., embed=True), session: Session = Depends(get_db)):
     user = session.query(User).filter_by(email=email).first()
     if not user:
+        # Avoid info leaks; always return success
         return {"success": True, "message": "If your email exists, you will get a reset link."}
     token = str(uuid.uuid4())
     user.password_reset_token = token
     user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
     session.commit()
-    # In production, send email. Here, return token for demonstration:
+    # Send reset link via email. See docs for provider integration.
+    try:
+        # Mock email: show how to replace with e.g. SendGrid, SMTP, etc
+        # Uncomment/send in production
+        # send_reset_email(user.email, token)
+        print(f"[SEND EMAIL] Would send to {user.email} — Reset link: https://yourapp.com/reset-password?token={token}")
+        email_sent = True  # TODO: Integrate with real provider
+    except Exception as e:
+        return {"success": False, "message": "Failed to send reset email. Please try again later."}
     return {
         "success": True,
-        "message": "Password reset link sent.",
-        "data": { "reset_token": token }  # REMOVE IN PRODUCTION!
+        "message": "If your email exists, you will get a reset link."
     }
+    
+# Example placeholder for email sending
+def send_reset_email(to_email: str, token: str):
+    import smtplib
+    from email.message import EmailMessage
+    msg = EmailMessage()
+    msg["Subject"] = "Your password reset link"
+    msg["From"] = "noreply@clearcause.com"
+    msg["To"] = to_email
+    msg.set_content(
+        f"Hi,\n\nClick below to reset your password:\nhttps://yourapp.com/reset-password?token={token}\n\nIf you did not request..."
+    )
+    # SMTP setup (adjust for your provider)
+    with smtplib.SMTP("smtp.yourprovider.com", 587) as server:
+        server.starttls()
+        server.login("username", "password")
+        server.send_message(msg)
+    print(f"Email sent to {to_email}")
 
 @router.post("/reset-password")
 def reset_password(token: str = Body(...), new_password: str = Body(...), session: Session = Depends(get_db)):
