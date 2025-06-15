@@ -1,13 +1,18 @@
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.schemas.user import UserCreate, UserOut, UserLogin
 from app.services import db
 from app.models.user import User
 from app.auth.password import hash_password, verify_password
-from app.auth.jwt import create_access_token
+from app.auth.jwt import create_access_token, SECRET_KEY, ALGORITHM
+from jose import jwt, JWTError
+from typing import Any
 
 router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 
 def get_db():
     db_session = db.SessionLocal()
@@ -16,26 +21,79 @@ def get_db():
     finally:
         db_session.close()
 
-@router.post("/signup", response_model=UserOut)
-def signup(user: UserCreate, session: Session = Depends(get_db)):
-    if session.query(User).filter_by(email=user.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_db)) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials. Please provide a valid token.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("user_id")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = session.query(User).filter_by(id=user_id).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+@router.post("/signup")
+def signup(user: UserCreate, session: Session = Depends(get_db)) -> Any:
+    existing = session.query(User).filter_by(email=user.email).first()
+    if existing:
+        return {
+            "success": False,
+            "message": "Email already registered",
+            "data": None
+        }
     hashed_pw = hash_password(user.password)
     db_user = User(email=user.email, password_hash=hashed_pw, user_type=user.user_type)
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
-    return db_user
+    out = {
+        "success": True,
+        "message": "Account created successfully.",
+        "data": {
+            "id": db_user.id,
+            "email": db_user.email,
+            "user_type": db_user.user_type.value,
+            "is_active": db_user.is_active
+        }
+    }
+    return out
 
 @router.post("/login")
-def login(user: UserLogin, session: Session = Depends(get_db)):
+def login(user: UserLogin, session: Session = Depends(get_db)) -> Any:
     db_user = session.query(User).filter_by(email=user.email).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token({"user_id": db_user.id, "user_type": db_user.user_type})
-    return {"access_token": token, "token_type": "bearer"}
+        return {
+            "success": False,
+            "message": "Invalid credentials",
+            "data": None
+        }
+    token = create_access_token({"user_id": db_user.id, "user_type": db_user.user_type.value})
+    return {
+        "success": True,
+        "message": "Login successful.",
+        "data": {
+            "access_token": token,
+            "token_type": "bearer"
+        }
+    }
 
-@router.get("/me", response_model=UserOut)
-def get_me():
-    # Placeholder for demonstration—see real auth in a full app.
-    return {"id": "me", "email": "me@example.com", "user_type": "donor", "is_active": True}
+@router.get("/me")
+def get_me(current_user: User = Depends(get_current_user)):
+    return {
+        "success": True,
+        "message": "User profile retrieved.",
+        "data": {
+            "id": current_user.id,
+            "email": current_user.email,
+            "user_type": current_user.user_type.value,
+            "is_active": current_user.is_active
+        }
+    }
+
