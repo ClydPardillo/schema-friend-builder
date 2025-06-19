@@ -1,0 +1,582 @@
+// Charity Platform Database Schema
+// Converted from SQL to DBML format
+
+Table users {
+  id varchar(36) [primary key]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) [not null]
+  user_type enum('donor', 'charity', 'admin') [not null]
+  first_name varchar(100)
+  last_name varchar(100)
+  phone varchar(20)
+  profile_image_url varchar(500)
+  email_verified boolean [not null, default: false]
+  email_verified_at timestamp
+  is_active boolean [not null, default: true]
+  last_login_at timestamp
+  password_reset_token varchar(255)
+  password_reset_expires timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    user_type [name: 'idx_users_type']
+    is_active [name: 'idx_users_active']
+    created_at [name: 'idx_users_created']
+  }
+}
+
+Table donors {
+  id varchar(36) [primary key]
+  user_id varchar(36) [unique, not null]
+  date_of_birth date
+  address_line1 varchar(255)
+  address_line2 varchar(255)
+  city varchar(100)
+  state varchar(100)
+  postal_code varchar(20)
+  country varchar(100) [not null, default: 'Philippines']
+  preferred_payment_method enum('gcash', 'paymaya', 'card', 'bank')
+  donation_frequency_preference enum('onetime', 'monthly', 'both') [not null, default: 'onetime']
+  total_donated decimal(15,2) [not null, default: 0.00]
+  donation_count int [not null, default: 0]
+  favorite_categories json
+  notification_preferences json
+  tax_receipt_required boolean [not null, default: true]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    total_donated [name: 'idx_donors_total_donated']
+    donation_count [name: 'idx_donors_donation_count']
+    country [name: 'idx_donors_country']
+  }
+}
+
+Table charities {
+  id varchar(36) [primary key]
+  user_id varchar(36) [unique, not null]
+  organization_name varchar(255) [not null]
+  organization_type enum('ngo', 'foundation', 'religious', 'educational', 'healthcare', 'community', 'other') [not null]
+  registration_number varchar(100) [unique]
+  tax_id varchar(100)
+  description text
+  mission_statement text
+  website_url varchar(500)
+  facebook_url varchar(500)
+  instagram_url varchar(500)
+  twitter_url varchar(500)
+  address_line1 varchar(255)
+  address_line2 varchar(255)
+  city varchar(100)
+  state varchar(100)
+  postal_code varchar(20)
+  country varchar(100) [not null, default: 'Philippines']
+  verification_status enum('pending', 'under_review', 'verified', 'rejected', 'suspended') [not null, default: 'pending']
+  verification_date timestamp
+  verified_by varchar(36)
+  rejection_reason text
+  bank_name varchar(255)
+  bank_account_holder varchar(255)
+  bank_account_number varchar(100)
+  bank_branch_code varchar(50)
+  bank_account_verified boolean [not null, default: false]
+  bank_verification_date timestamp
+  total_raised decimal(15,2) [not null, default: 0.00]
+  total_campaigns int [not null, default: 0]
+  active_campaigns int [not null, default: 0]
+  transparency_score int
+  efficiency_rating int
+  last_scorecard_update timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    organization_name [name: 'idx_charities_name']
+    verification_status [name: 'idx_charities_verification']
+    organization_type [name: 'idx_charities_type']
+    total_raised [name: 'idx_charities_total_raised']
+    transparency_score [name: 'idx_charities_transparency']
+  }
+}
+
+Table campaigns {
+  id varchar(36) [primary key]
+  charity_id varchar(36) [not null]
+  title varchar(255) [not null]
+  slug varchar(255) [unique, not null]
+  description text [not null]
+  short_description varchar(500)
+  category varchar(100) [not null]
+  subcategory varchar(100)
+  goal_amount decimal(15,2) [not null]
+  raised_amount decimal(15,2) [not null, default: 0.00]
+  held_amount decimal(15,2) [not null, default: 0.00]
+  released_amount decimal(15,2) [not null, default: 0.00]
+  image_url varchar(500)
+  banner_url varchar(500)
+  video_url varchar(500)
+  location varchar(255)
+  start_date timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  end_date timestamp [not null]
+  status enum('draft', 'pending_approval', 'active', 'paused', 'completed', 'cancelled', 'expired') [not null, default: 'draft']
+  verification_status enum('pending', 'verified', 'rejected') [not null, default: 'pending']
+  verified boolean [not null, default: false]
+  verified_by varchar(36)
+  verified_at timestamp
+  rejection_reason text
+  featured boolean [not null, default: false]
+  urgent boolean [not null, default: false]
+  donor_count int [not null, default: 0]
+  view_count int [not null, default: 0]
+  share_count int [not null, default: 0]
+  tags json
+  meta_title varchar(255)
+  meta_description varchar(500)
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    charity_id [name: 'idx_campaigns_charity']
+    status [name: 'idx_campaigns_status']
+    verification_status [name: 'idx_campaigns_verification']
+    category [name: 'idx_campaigns_category']
+    verified [name: 'idx_campaigns_verified']
+    featured [name: 'idx_campaigns_featured']
+    end_date [name: 'idx_campaigns_end_date']
+    raised_amount [name: 'idx_campaigns_raised']
+    created_at [name: 'idx_campaigns_created']
+  }
+}
+
+Table milestones {
+  id varchar(36) [primary key]
+  campaign_id varchar(36) [not null]
+  milestone_number int [not null]
+  title varchar(255) [not null]
+  description text [not null]
+  target_amount decimal(15,2) [not null]
+  percentage_of_goal decimal(5,2) [not null]
+  due_date timestamp
+  requirements text
+  deliverables text
+  status enum('upcoming', 'pending', 'in_progress', 'submitted', 'under_review', 'verified', 'released', 'rejected') [not null, default: 'upcoming']
+  proof_required boolean [not null, default: true]
+  proof_submitted boolean [not null, default: false]
+  proof_verified boolean [not null, default: false]
+  funds_released boolean [not null, default: false]
+  release_date timestamp
+  verified_by varchar(36)
+  verified_at timestamp
+  rejection_reason text
+  admin_notes text
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    (campaign_id, milestone_number) [unique, name: 'uk_milestones_campaign_number']
+    campaign_id [name: 'idx_milestones_campaign']
+    status [name: 'idx_milestones_status']
+    due_date [name: 'idx_milestones_due_date']
+    proof_submitted [name: 'idx_milestones_proof_submitted']
+    proof_verified [name: 'idx_milestones_verified']
+  }
+}
+
+Table milestone_proofs {
+  id varchar(36) [primary key]
+  milestone_id varchar(36) [not null]
+  proof_type enum('receipt', 'photo', 'video', 'report', 'document', 'testimonial', 'survey', 'other') [not null]
+  title varchar(255) [not null]
+  description text [not null]
+  submission_notes text
+  submission_date timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  status enum('pending', 'under_review', 'approved', 'needs_revision', 'rejected') [not null, default: 'pending']
+  reviewer_notes text
+  reviewed_by varchar(36)
+  reviewed_at timestamp
+  revision_count int [not null, default: 0]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    milestone_id [name: 'idx_proof_milestone']
+    status [name: 'idx_proof_status']
+    proof_type [name: 'idx_proof_type']
+    submission_date [name: 'idx_proof_submission_date']
+  }
+}
+
+Table proof_files {
+  id varchar(36) [primary key]
+  proof_id varchar(36) [not null]
+  file_name varchar(255) [not null]
+  original_name varchar(255) [not null]
+  file_type enum('image', 'video', 'document', 'pdf', 'audio') [not null]
+  mime_type varchar(100) [not null]
+  file_size_bytes bigint [not null]
+  file_size_mb decimal(10,2) [not null]
+  file_url varchar(500) [not null]
+  storage_path varchar(500) [not null]
+  is_primary boolean [not null, default: false]
+  upload_status enum('uploading', 'completed', 'failed') [not null, default: 'completed']
+  uploaded_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    proof_id [name: 'idx_files_proof']
+    file_type [name: 'idx_files_type']
+    is_primary [name: 'idx_files_primary']
+  }
+}
+
+Table donations {
+  id varchar(36) [primary key]
+  donor_id varchar(36) [not null]
+  campaign_id varchar(36) [not null]
+  amount decimal(15,2) [not null]
+  frequency enum('onetime', 'monthly') [not null, default: 'onetime']
+  payment_method enum('gcash', 'paymaya', 'card', 'bank', 'other') [not null]
+  payment_reference varchar(255) [unique]
+  external_payment_id varchar(255)
+  payment_status enum('pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded', 'disputed') [not null, default: 'pending']
+  currency varchar(3) [not null, default: 'PHP']
+  exchange_rate decimal(10,6)
+  amount_usd decimal(15,2)
+  anonymous boolean [not null, default: false]
+  public_message text
+  private_message text
+  tribute_type enum('in_honor', 'in_memory', 'none') [not null, default: 'none']
+  tribute_name varchar(255)
+  tribute_email varchar(255)
+  fee_amount decimal(15,2) [not null, default: 0.00]
+  net_amount decimal(15,2) [not null]
+  tax_deductible boolean [not null, default: true]
+  receipt_sent boolean [not null, default: false]
+  receipt_sent_at timestamp
+  refund_reason text
+  refunded_at timestamp
+  donation_date timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  processed_at timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    donor_id [name: 'idx_donations_donor']
+    campaign_id [name: 'idx_donations_campaign']
+    payment_status [name: 'idx_donations_status']
+    payment_method [name: 'idx_donations_method']
+    donation_date [name: 'idx_donations_date']
+    amount [name: 'idx_donations_amount']
+    frequency [name: 'idx_donations_frequency']
+    anonymous [name: 'idx_donations_anonymous']
+  }
+}
+
+Table recurring_donations {
+  id varchar(36) [primary key]
+  donor_id varchar(36) [not null]
+  campaign_id varchar(36) [not null]
+  amount decimal(15,2) [not null]
+  payment_method enum('gcash', 'paymaya', 'card', 'bank') [not null]
+  payment_token varchar(255)
+  status enum('active', 'paused', 'cancelled', 'failed', 'expired') [not null, default: 'active']
+  start_date timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  next_charge_date timestamp [not null]
+  last_charged_at timestamp
+  pause_until_date timestamp
+  cancellation_reason text
+  cancelled_at timestamp
+  total_charges int [not null, default: 0]
+  total_amount decimal(15,2) [not null, default: 0.00]
+  failed_charge_count int [not null, default: 0]
+  last_failure_reason text
+  retry_count int [not null, default: 0]
+  max_retry_attempts int [not null, default: 3]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    donor_id [name: 'idx_recurring_donor']
+    campaign_id [name: 'idx_recurring_campaign']
+    status [name: 'idx_recurring_status']
+    next_charge_date [name: 'idx_recurring_next_charge']
+    (status, next_charge_date) [name: 'idx_recurring_active']
+  }
+}
+
+Table fund_releases {
+  id varchar(36) [primary key]
+  milestone_id varchar(36) [unique, not null]
+  campaign_id varchar(36) [not null]
+  charity_id varchar(36) [not null]
+  release_type enum('milestone', 'emergency', 'final', 'partial') [not null, default: 'milestone']
+  amount decimal(15,2) [not null]
+  fee_amount decimal(15,2) [not null, default: 0.00]
+  net_amount decimal(15,2) [not null]
+  bank_name varchar(255) [not null]
+  bank_account_number varchar(100) [not null]
+  bank_reference varchar(255)
+  transaction_reference varchar(255)
+  status enum('pending_approval', 'approved', 'processing', 'completed', 'failed', 'cancelled') [not null, default: 'pending_approval']
+  approved_by varchar(36)
+  approved_at timestamp
+  processed_by varchar(36)
+  processed_at timestamp
+  release_date timestamp
+  failure_reason text
+  admin_notes text
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    campaign_id [name: 'idx_releases_campaign']
+    charity_id [name: 'idx_releases_charity']
+    status [name: 'idx_releases_status']
+    release_date [name: 'idx_releases_date']
+    amount [name: 'idx_releases_amount']
+  }
+}
+
+Table impact_updates {
+  id varchar(36) [primary key]
+  campaign_id varchar(36) [not null]
+  milestone_id varchar(36)
+  author_id varchar(36) [not null]
+  title varchar(255) [not null]
+  content text [not null]
+  summary varchar(500)
+  image_url varchar(500)
+  video_url varchar(500)
+  update_type enum('progress', 'milestone', 'story', 'emergency', 'completion') [not null, default: 'progress']
+  is_published boolean [not null, default: false]
+  published_at timestamp
+  scheduled_publish_at timestamp
+  view_count int [not null, default: 0]
+  like_count int [not null, default: 0]
+  share_count int [not null, default: 0]
+  featured boolean [not null, default: false]
+  tags json
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    campaign_id [name: 'idx_updates_campaign']
+    milestone_id [name: 'idx_updates_milestone']
+    author_id [name: 'idx_updates_author']
+    (is_published, published_at) [name: 'idx_updates_published']
+    update_type [name: 'idx_updates_type']
+    featured [name: 'idx_updates_featured']
+  }
+}
+
+Table impact_metrics {
+  id varchar(36) [primary key]
+  campaign_id varchar(36) [not null]
+  update_id varchar(36)
+  metric_type varchar(100) [not null]
+  metric_category enum('beneficiaries', 'output', 'outcome', 'impact', 'efficiency') [not null]
+  metric_name varchar(255) [not null]
+  metric_value decimal(15,2) [not null]
+  metric_unit varchar(50)
+  metric_description text
+  measurement_date timestamp [not null]
+  data_source varchar(255)
+  verification_status enum('unverified', 'self_reported', 'third_party', 'verified') [not null, default: 'self_reported']
+  baseline_value decimal(15,2)
+  target_value decimal(15,2)
+  is_cumulative boolean [not null, default: false]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    campaign_id [name: 'idx_metrics_campaign']
+    update_id [name: 'idx_metrics_update']
+    metric_type [name: 'idx_metrics_type']
+    metric_category [name: 'idx_metrics_category']
+    measurement_date [name: 'idx_metrics_date']
+  }
+}
+
+Table notifications {
+  id varchar(36) [primary key]
+  user_id varchar(36) [not null]
+  notification_type varchar(50) [not null]
+  category enum('donation', 'campaign', 'milestone', 'verification', 'system', 'marketing') [not null]
+  title varchar(255) [not null]
+  message text [not null]
+  action_text varchar(100)
+  action_url varchar(500)
+  priority enum('low', 'normal', 'high', 'urgent') [not null, default: 'normal']
+  delivery_method enum('in_app', 'email', 'sms', 'push') [not null, default: 'in_app']
+  is_read boolean [not null, default: false]
+  read_at timestamp
+  is_sent boolean [not null, default: false]
+  sent_at timestamp
+  scheduled_for timestamp
+  related_entity_type varchar(50)
+  related_entity_id varchar(36)
+  metadata json
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    user_id [name: 'idx_notifications_user']
+    (user_id, is_read) [name: 'idx_notifications_unread']
+    notification_type [name: 'idx_notifications_type']
+    category [name: 'idx_notifications_category']
+    scheduled_for [name: 'idx_notifications_scheduled']
+    (related_entity_type, related_entity_id) [name: 'idx_notifications_entity']
+  }
+}
+
+Table audit_logs {
+  id varchar(36) [primary key]
+  user_id varchar(36)
+  session_id varchar(36)
+  action varchar(100) [not null]
+  entity_type varchar(50) [not null]
+  entity_id varchar(36)
+  description text
+  old_values json
+  new_values json
+  changes_summary text
+  ip_address varchar(45)
+  user_agent text
+  request_id varchar(36)
+  severity enum('info', 'warning', 'error', 'critical') [not null, default: 'info']
+  status enum('success', 'failure', 'pending') [not null, default: 'success']
+  error_message text
+  execution_time_ms int
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    user_id [name: 'idx_audit_user']
+    action [name: 'idx_audit_action']
+    (entity_type, entity_id) [name: 'idx_audit_entity']
+    created_at [name: 'idx_audit_date']
+    severity [name: 'idx_audit_severity']
+    ip_address [name: 'idx_audit_ip']
+  }
+}
+
+Table admin_scorecards {
+  id varchar(36) [primary key]
+  charity_id varchar(36) [not null]
+  scorecard_period varchar(20) [not null]
+  transparency_score int [not null, default: 0]
+  efficiency_score int [not null, default: 0]
+  impact_score int [not null, default: 0]
+  overall_score int [not null, default: 0]
+  funds_utilization_rate decimal(5,2) [not null, default: 0.00]
+  milestone_completion_rate decimal(5,2) [not null, default: 0.00]
+  donor_satisfaction_score int
+  report_timeliness_score int [not null, default: 0]
+  compliance_score int [not null, default: 0]
+  total_campaigns int [not null, default: 0]
+  successful_campaigns int [not null, default: 0]
+  total_funds_raised decimal(15,2) [not null, default: 0.00]
+  total_funds_released decimal(15,2) [not null, default: 0.00]
+  verification_issues_count int [not null, default: 0]
+  last_calculated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  calculated_by varchar(36) [not null]
+  notes text
+  is_published boolean [not null, default: false]
+  published_at timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    (charity_id, scorecard_period) [unique, name: 'uk_scorecards_charity_period']
+    charity_id [name: 'idx_scorecards_charity']
+    overall_score [name: 'idx_scorecards_overall']
+    transparency_score [name: 'idx_scorecards_transparency']
+    scorecard_period [name: 'idx_scorecards_period']
+    is_published [name: 'idx_scorecards_published']
+  }
+}
+
+Table platform_settings {
+  id varchar(36) [primary key]
+  setting_key varchar(100) [unique, not null]
+  setting_value text
+  setting_type enum('string', 'number', 'boolean', 'json', 'encrypted') [not null, default: 'string']
+  category varchar(50) [not null]
+  description text
+  is_public boolean [not null, default: false]
+  is_editable boolean [not null, default: true]
+  validation_rules json
+  default_value text
+  last_modified_by varchar(36) [not null]
+  version int [not null, default: 1]
+  effective_from timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  effective_until timestamp
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    category [name: 'idx_settings_category']
+    is_public [name: 'idx_settings_public']
+    (effective_from, effective_until) [name: 'idx_settings_effective']
+  }
+}
+
+Table campaign_comments {
+  id varchar(36) [primary key]
+  campaign_id varchar(36) [not null]
+  user_id varchar(36) [not null]
+  parent_comment_id varchar(36)
+  content text [not null]
+  is_anonymous boolean [not null, default: false]
+  is_approved boolean [not null, default: false]
+  is_flagged boolean [not null, default: false]
+  flag_reason varchar(255)
+  moderated_by varchar(36)
+  moderated_at timestamp
+  like_count int [not null, default: 0]
+  reply_count int [not null, default: 0]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    campaign_id [name: 'idx_comments_campaign']
+    user_id [name: 'idx_comments_user']
+    parent_comment_id [name: 'idx_comments_parent']
+    is_approved [name: 'idx_comments_approved']
+    is_flagged [name: 'idx_comments_flagged']
+    created_at [name: 'idx_comments_created']
+  }
+}
+
+// Relationships
+Ref: donors.user_id > users.id
+Ref: charities.user_id > users.id
+Ref: charities.verified_by > users.id
+Ref: campaigns.charity_id > charities.id
+Ref: campaigns.verified_by > users.id
+Ref: milestones.campaign_id > campaigns.id
+Ref: milestones.verified_by > users.id
+Ref: milestone_proofs.milestone_id > milestones.id
+Ref: milestone_proofs.reviewed_by > users.id
+Ref: proof_files.proof_id > milestone_proofs.id
+Ref: donations.donor_id > donors.id
+Ref: donations.campaign_id > campaigns.id
+Ref: recurring_donations.donor_id > donors.id
+Ref: recurring_donations.campaign_id > campaigns.id
+Ref: fund_releases.milestone_id - milestones.id
+Ref: fund_releases.campaign_id > campaigns.id
+Ref: fund_releases.charity_id > charities.id
+Ref: fund_releases.approved_by > users.id
+Ref: fund_releases.processed_by > users.id
+Ref: impact_updates.campaign_id > campaigns.id
+Ref: impact_updates.milestone_id > milestones.id
+Ref: impact_updates.author_id > users.id
+Ref: impact_metrics.campaign_id > campaigns.id
+Ref: impact_metrics.update_id > impact_updates.id
+Ref: notifications.user_id > users.id
+Ref: audit_logs.user_id > users.id
+Ref: admin_scorecards.charity_id > charities.id
+Ref: admin_scorecards.calculated_by > users.id
+Ref: platform_settings.last_modified_by > users.id
+Ref: campaign_comments.campaign_id > campaigns.id
+Ref: campaign_comments.user_id > users.id
+Ref: campaign_comments.parent_comment_id > campaign_comments.id
+Ref: campaign_comments.moderated_by > users.id
